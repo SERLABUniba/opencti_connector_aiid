@@ -1,0 +1,23 @@
+opencti:
+  url: 'http://opencti:8080'
+  token: 'ChangeMe'
+
+connector:
+  id: 'ChangeMe'
+  type: 'EXTERNAL_IMPORT'
+  name: 'AI-Incident-Database'
+  scope: 'identity,report,external-reference,incident'
+  confidence_level: 75
+  log_level: 'info'
+  interval: P7D
+  reset_state_on_start: false
+
+aiid:
+  query_url: 'https://incidentdatabase.ai/api/graphql'
+  confidence_level: 75
+  batch_size: 50
+  batch_delay: 1
+  start_date: ''
+  import_report_text: false
+  author_name: 'AI Incident Database'
+  author_identity_class: 'organization'
