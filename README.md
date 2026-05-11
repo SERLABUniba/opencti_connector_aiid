@@ -145,15 +145,17 @@ Find the connector and click the refresh button to reset the state and trigger a
 
 ## Behavior
 
-The connector fetches all the AI incidents and reports from the [AIID](https://incidentdatabase.ai/) official site and imports them directly into OpenCTI. During the processing of the entire database, all the information are coded into a STIX 2.1 bundle. For each incident, the connector:
+The connector fetches all the AI incidents and reports from the [AIID](https://incidentdatabase.ai/) official site and imports them directly into OpenCTI. During the processing of the entire database, all the information are coded into a STIX 2.1 bundle. For each incident queried (with batch size of 50 incidents), the connector:
 1. Create author Identity (AI Incident Database),
 2. Create Incident entity linking to author,
 3. Extract Deployers and link them to the Incident
 4. For each report related to the incident:
 -- If report already exists in OpenCTI → link incident to report
 -- If report does not exist → create report and link to incident
+   
 
 The query for the AIID is:
+```
 INCIDENTS_QUERY = """
 query($pagination: PaginationType, $sort: IncidentSortType, $languages: [String]!) {
   incidents (pagination: $pagination, sort: $sort){
@@ -226,7 +228,7 @@ query($pagination: PaginationType, $sort: IncidentSortType, $languages: [String]
     }
   }
 }
-"""
+```
 
 ### Data Flow
 
@@ -278,29 +280,21 @@ graph TD
 
 ### Entity Mapping
 
-| MITRE Data Type      | OpenCTI Entity      | Spaceshield Specific Content & Description       |
+| Dato Sorgente AIID      | OpenCTI Entoty (STIX)      | Description       |
 |----------------------|---------------------|--------------------------------------------------|
-| attack-pattern       | Attack Pattern      | Tactics and techniques. It includes specific automotive-domain techniques (e.g. CAN Bus Injection, Key Fob Relay, Jailbreaking ECU).                           |
-| campaign             | Campaign            | Attack campaigns. It includes case studies of real-world exploits or security research (e.g., “Jailbreaking an electric vehicle”).                               |
-| course-of-action     | Course of Action    | Mitigations and defensive measures. It includes specific mitigations for the Ground and Space segments (e.g., on-board encryption).               |
-| x-mitre-tactic       | Kill Chain Phases                   | Converted to kill chain phases. It includes specific phases of an automotive attack (e.g., Vehicle Function Affect, Safety-Critical Access).                   |
-| x-mitre-matrix       | Kill Chain                   | ATT&CK matrix metadata. It generates the dedicated “Automotive Threat Matrix” view in the tactical panel.                           |                    |
-| external-reference  | External Reference                   | Direct links to the official Mitre Attack and to case studies useful to demonstration videos, USENIX papers, Black Hat presentations, and NVD/CVE advisories...                      |
-		
-### ATT&CK Matrices Required
-
-1. **Enterprise ATT&CK**: Windows, macOS, Linux, Cloud, Network, Containers
-2. **CAPEC**: Attack patterns with CWE/CVE relationships
-
-### ATT&CK Matrices Imoported
-1. **ATM-Automotive**: Automotive-domain specific kill chain phases
+| Incident ID & Title | Incident | The central entity. The name is formatted as AIID-{ID}: {Title}. | 
+| Description | Description | The description of the incident | 
+| Alleged Deployer | Identity (Organization) | Each company involved (e.g., Google, Tesla, OpenAI) becomes a separate entity | 
+| Reports (list) | Report | Each source (article, paper) becomes a report that “contains” the incident. | 
+| Classifications | Labels | Namespaces (e.g., technical, social) become labels: Risk: {Value}. | 
+| External URL / Cite | External Reference | Clickable link to the official page for the incident on incidentdatabase.ai. | 
+| Classifications | Labels | Namespaces (e.g., technical, social) become labels: Risk: {Value}. | 
 
 ### Processing Details
 
-- **Native STIX Import**: All data is in native STIX 2.1 format
-- **Relationships**: All MITRE relationships (uses, mitigates, subtechnique-of) are preserved. Specific relatioships for the “automotive” domain are added.
-- **Kill Chain**: ATT&CK tactics are mapped to kill chain phases. Specific kill chain phases for the “automotive” domain are added.
-- **External References**: MITRE IDs and documentation links are preserved. Specific external references are added for the "automotive" domain (by ISAC).
+- **STIX Import**: All data is in native STIX 2.1 format
+- **Relationships**: All AI incidents are linked to the respective reports.
+- **External References**: All URLs linked to reports are preserved.
 
 ## Debugging
 
@@ -313,4 +307,4 @@ CONNECTOR_LOG_LEVEL=debug
 ## Additional information
 
 - **Large Dataset**: Initial import may take several minutes due to the size
-- **Reference**: [MITRE ATT&CK](https://attack.mitre.org/) | [CAPEC](https://capec.mitre.org/) | [ATM](https://atm.automotiveisac.com/)
+- **Reference**: [MITRE ATT&CK](https://attack.mitre.org/) | [CAPEC](https://capec.mitre.org/) | [AIID](https://incidentdatabase.ai/)
