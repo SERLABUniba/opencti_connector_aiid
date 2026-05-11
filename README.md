@@ -231,42 +231,48 @@ query($pagination: PaginationType, $sort: IncidentSortType, $languages: [String]
 ### Data Flow
 
 ```mermaid
-graph LR
-    subgraph MITRE_Reference [MITRE ATT&CK Base]
+graph TD
+    subgraph AIID_Source [AI Incident Database]
         direction TB
-        Enterprise[Enterprise ATT&CK]
-        Mobile[Mobile ATT&CK]
+        RawIncident[Incident Data]
+        RawDeployers[Alleged Deployers]
+        RawReports[Incident Reports]
+        RawClass[Classifications]
     end
 
-    subgraph AutoISAC_ATM [Auto-ISAC ATM]
+    subgraph Connector_Logic [AIID Connector - Logic]
         direction TB
-        ATMMatrix[Automotive Threat Matrix]
-        ATMTechniques[Automotive Specific TTPs]
-        ATMCampaigns[Security Research & Campaigns]
+        UUIDGen[UUID v5 Generator]
+        DateParse[Date ISO/UTC Parser]
+        BundleWrap[STIX 2.1 Bundle Creator]
     end
 
-    subgraph OpenCTI_Model [OpenCTI Data Model]
+    subgraph OpenCTI_Entities [OpenCTI / STIX Data Model]
         direction LR
-        AttackPattern[Attack Pattern]
-        Campaign[Campaign]
-        InSet[Intrusion Set]
-        KillChain[Kill Chain Phase]
-        Rel[Relationship]
+        IdentityAuthor[Identity: AI Incident Database]
+        IncidentEntity[Incident]
+        IdentityDeployer[Identity: Organization/Deployer]
+        ReportEntity[Report]
+        Rel[Relationship: related-to]
     end
 
-    %% Inheritance
-    Enterprise -.-> |"Extended by"| ATMMatrix
-    Mobile -.-> |"TTPs Knowledge Base for Mobile/Vehicle"| ATMTechniques
+    %% Data FLow
+    RawIncident --> UUIDGen
+    RawDeployers --> UUIDGen
+    RawReports --> UUIDGen
 
-    %% Mapping ATM -> OpenCTI
-    ATMMatrix --> KillChain
-    ATMTechniques --> AttackPattern
-    ATMCampaigns --> Campaign
-    
-    %% Relationship for the Model
-    AttackPattern --> Rel
-    Campaign --> Rel
-    Rel --> InSet
+    %% Mapping
+    RawIncident --> IncidentEntity
+    RawDeployers --> IdentityDeployer
+    RawReports --> ReportEntity
+    RawClass --> |"risk:namespace"| IncidentEntity
+
+    %% Relationships
+    IdentityAuthor -.-> |"created_by_ref"| IncidentEntity
+    IdentityAuthor -.-> |"created_by_ref"| ReportEntity
+    IncidentEntity --> |"source_ref"| Rel
+    IdentityDeployer --> |"target_ref"| Rel
+    ReportEntity --> |"object_refs"| IncidentEntity
 
 ```
 
